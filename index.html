@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>初中成绩管理系统</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+
+<body>
+    <header>
+        <h1>初中成绩管理系统</h1>
+    </header>
+    <main>
+        <section class="controls">
+            <button id="downloadTemplate">下载模板</button>
+            <input type="file" id="uploadFile" accept=".xlsx" hidden>
+            <button id="importData">导入数据</button>
+            <div class="search-controls">
+                <input type="text" id="searchId" placeholder="学号">
+                <input type="text" id="searchName" placeholder="姓名">
+                <select id="startYear">
+                    <option value="">起始年度</option>
+                </select>
+                <select id="endYear">
+                    <option value="">结束年度</option>
+                </select>
+                <select id="searchType">
+                    <option value="">全部</option>
+                    <option value="期中">期中</option>
+                    <option value="期末">期末</option>
+                </select>
+                <button id="searchButton">查询</button>
+            </div>
+            <button id="exportResult">导出结果</button>
+        </section>
+        <section class="result-table">
+            <table id="resultTable">
+                <thead>
+                    <tr>
+                        <th>学年</th>
+                        <th>考试类型</th>
+                        <th>年级</th>
+                        <th>学号</th>
+                        <th>姓名</th>
+                        <th>班级</th>
+                        <th class="grade-column">语文</th>
+                        <th class="grade-column">数学</th>
+                        <th class="grade-column">英语</th>
+                        <th class="grade-column">物理</th>
+                        <th class="grade-column">化学</th>
+                        <th class="grade-column">道德与法治</th>
+                        <th class="grade-column">历史</th>
+                        <th class="grade-column">地理</th>
+                        <th class="grade-column">生物</th>
+                        <th class="grade-column">体育</th>
+                        <th class="grade-column">音乐</th>
+                        <th class="grade-column">美术</th>
+                        <th class="grade-column">信息</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+    </main>
+    <script src="script.js"></script>
+</body>
+
+</html>
