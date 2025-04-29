@@ -45,37 +45,6 @@ function downloadTemplate() {
     }
 }
 
-// 处理文件上传
-async function handleFileUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-        const response = await fetch('http://localhost:3000/upload', {
-            method: 'POST',
-            body: formData
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-                alert('数据上传成功，已保存到服务器');
-                // 可以在这里重新获取最新数据
-            } else {
-                alert('数据上传失败: ' + data.message);
-            }
-        } else {
-            alert('服务器响应错误');
-        }
-    } catch (error) {
-        console.error('文件上传出错:', error);
-        alert('文件上传出错，请检查网络连接');
-    }
-}
-
 
 // 处理文件上传网络
 document.addEventListener('DOMContentLoaded', function() {
