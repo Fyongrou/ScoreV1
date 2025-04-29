@@ -76,6 +76,48 @@ async function handleFileUpload(event) {
     }
 }
 
+
+// 处理文件上传网络
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadFileInput = document.getElementById('uploadFile');
+    const importDataButton = document.getElementById('importData');
+
+    importDataButton.addEventListener('click', function() {
+        uploadFileInput.click();
+    });
+
+    uploadFileInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // 这里需要替换为你实际的服务器上传接口地址
+            const uploadUrl = 'https://fyongrou.github.io/ScoreV1/'; 
+            
+            fetch(uploadUrl, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('文件上传出错，请检查网络连接');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('文件上传成功', data);
+            })
+            .catch(error => {
+                console.error(error.message);
+                alert(error.message);
+            });
+        }
+    });
+});
+
+
+
 // 填充年度下拉列表
 function populateYearDropdowns() {
     try {
