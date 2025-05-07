@@ -3,29 +3,39 @@ let allGrades = [];
 // 存储当前查询结果
 let currentResults = [];
 
+// 提取错误处理函数
+function handleError(error, message) {
+    console.error(message, error);
+    alert(message);
+}
+
 // 初始化事件监听器
 function initEventListeners() {
     try {
-        const downloadTemplateBtn = document.getElementById('downloadTemplate');
-        const importDataBtn = document.getElementById('importData');
-        const uploadFileInput = document.getElementById('uploadFile');
-        const searchButton = document.getElementById('searchButton');
-        const exportResultBtn = document.getElementById('exportResult');
+        const elements = {
+            downloadTemplateBtn: document.getElementById('downloadTemplate'),
+            importDataBtn: document.getElementById('importData'),
+            uploadFileInput: document.getElementById('uploadFile'),
+            searchButton: document.getElementById('searchButton'),
+            exportResultBtn: document.getElementById('exportResult')
+        };
 
-        if (!downloadTemplateBtn || !importDataBtn || !uploadFileInput || !searchButton || !exportResultBtn) {
-            console.error('部分 DOM 元素未找到，请检查 HTML 结构');
-            return;
+        for (const [key, element] of Object.entries(elements)) {
+            if (!element) {
+                console.error(`未找到 DOM 元素: ${key.replace('Btn', '')}`);
+                return;
+            }
         }
 
-        downloadTemplateBtn.addEventListener('click', downloadTemplate);
-        importDataBtn.addEventListener('click', () => {
-            uploadFileInput.click();
+        elements.downloadTemplateBtn.addEventListener('click', downloadTemplate);
+        elements.importDataBtn.addEventListener('click', () => {
+            elements.uploadFileInput.click();
         });
-        uploadFileInput.addEventListener('change', handleFileUpload);
-        searchButton.addEventListener('click', performSearch);
-        exportResultBtn.addEventListener('click', exportResultsToExcel);
+        elements.uploadFileInput.addEventListener('change', handleFileUpload);
+        elements.searchButton.addEventListener('click', performSearch);
+        elements.exportResultBtn.addEventListener('click', exportResultsToExcel);
     } catch (error) {
-        console.error('事件监听器初始化出错:', error);
+        handleError(error, '事件监听器初始化出错');
     }
 }
 
@@ -40,52 +50,9 @@ function downloadTemplate() {
         XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
         XLSX.writeFile(wb, '成绩模板.xlsx');
     } catch (error) {
-        console.error('下载模板出错:', error);
-        alert('下载模板出错，请检查控制台信息');
+        handleError(error, '下载模板出错，请检查控制台信息');
     }
 }
-
-
-// 处理文件上传网络
-document.addEventListener('DOMContentLoaded', function() {
-    const uploadFileInput = document.getElementById('uploadFile');
-    const importDataButton = document.getElementById('importData');
-
-    importDataButton.addEventListener('click', function() {
-        uploadFileInput.click();
-    });
-
-    uploadFileInput.addEventListener('change', function() {
-        const file = this.files[0];
-        if (file) {
-            const formData = new FormData();
-            formData.append('file', file);
-
-            // 这里需要替换为你实际的服务器上传接口地址
-            const uploadUrl = 'https://fyongrou.github.io/ScoreV1/'; 
-            
-            fetch(uploadUrl, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('文件上传出错，请检查网络连接');
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('文件上传成功', data);
-            })
-            .catch(error => {
-                console.error(error.message);
-                alert(error.message);
-            });
-        }
-    });
-});
-
-
 
 // 填充年度下拉列表
 function populateYearDropdowns() {
@@ -112,7 +79,7 @@ function populateYearDropdowns() {
             endYearSelect.appendChild(endOption);
         });
     } catch (error) {
-        console.error('填充年度下拉列表出错:', error);
+        handleError(error, '填充年度下拉列表出错');
     }
 }
 
@@ -170,13 +137,12 @@ function exportErrorReport(errorRecords) {
         XLSX.utils.book_append_sheet(wb, ws, '错误报告');
         XLSX.writeFile(wb, '数据导入错误报告.xlsx');
     } catch (error) {
-        console.error('导出错误报告出错:', error);
-        alert('导出错误报告出错，请检查控制台信息');
+        handleError(error, '导出错误报告出错，请检查控制台信息');
     }
 }
 
 // 执行查询
-function performSearch() {
+async function performSearch() {
     try {
         console.log('开始执行查询');
         const searchId = document.getElementById('searchId')?.value.trim() || '';
@@ -185,24 +151,30 @@ function performSearch() {
         const endYear = document.getElementById('endYear')?.value;
         const searchType = document.getElementById('searchType')?.value;
 
-        // 这里需要从服务器获取数据
-        fetch(`http://localhost:3000/search?searchId=${searchId}&searchName=${searchName}&startYear=${startYear}&endYear=${endYear}&searchType=${searchType}`)
-          .then(response => response.json())
-          .then(data => {
-                if (data.success) {
-                    currentResults = data.results;
-                    renderResults(currentResults);
-                } else {
-                    alert('查询失败: ' + data.message);
-                }
-            })
-          .catch(error => {
-                console.error('查询出错:', error);
-                alert('查询出错，请检查网络连接');
-            });
+        const url = `http://localhost:3000/search?searchId=${searchId}&searchName=${searchName}&startYear=${startYear}&endYear=${endYear}&searchType=${searchType}`;
+        console.log('请求的 URL:', url);
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            throw new Error(`HTTP 错误! 状态码: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+            currentResults = data.results;
+            renderResults(currentResults);
+        } else {
+            alert('查询失败: ' + data.message);
+        }
     } catch (error) {
-        console.error('执行查询出错:', error);
-        alert('执行查询出错，请检查控制台信息');
+        console.error('查询出错的详细信息:', error);
+        if (error.message.includes('Failed to fetch')) {
+            handleError(error, '查询出错，请检查网络连接或服务器是否启动');
+        } else {
+            handleError(error, '查询出错，请检查控制台信息');
+        }
     }
 }
 
@@ -246,20 +218,19 @@ function renderResults(results) {
             });
         });
     } catch (error) {
-        console.error('渲染结果出错:', error);
-        alert('渲染结果出错，请检查控制台信息');
+        handleError(error, '渲染结果出错，请检查控制台信息');
     }
 }
 
 // 更新成绩
-function updateGrade(column, grade, newValue) {
+async function updateGrade(column, grade, newValue) {
     try {
         if (isNaN(newValue) && !['A', 'B', 'C', 'D'].includes(newValue)) {
             alert('成绩值无效，请输入数值或 A、B、C、D');
             return;
         }
         // 这里需要将更新发送到服务器
-        fetch('http://localhost:3000/update', {
+        const response = await fetch('http://localhost:3000/update', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -269,23 +240,17 @@ function updateGrade(column, grade, newValue) {
                 column: column,
                 newValue: newValue
             })
-        })
-          .then(response => response.json())
-          .then(data => {
-                if (data.success) {
-                    grade[column] = newValue;
-                    alert('成绩更新成功');
-                } else {
-                    alert('成绩更新失败: ' + data.message);
-                }
-            })
-          .catch(error => {
-                console.error('更新成绩出错:', error);
-                alert('更新成绩出错，请检查网络连接');
-            });
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            grade[column] = newValue;
+            alert('成绩更新成功');
+        } else {
+            alert('成绩更新失败: ' + data.message);
+        }
     } catch (error) {
-        console.error('更新成绩出错:', error);
-        alert('更新成绩出错，请检查控制台信息');
+        handleError(error, '更新成绩出错，请检查网络连接');
     }
 }
 
@@ -301,8 +266,7 @@ function exportResultsToExcel() {
         XLSX.utils.book_append_sheet(wb, ws, '查询结果');
         XLSX.writeFile(wb, '查询结果.xlsx');
     } catch (error) {
-        console.error('导出结果到 Excel 出错:', error);
-        alert('导出结果到 Excel 出错，请检查控制台信息');
+        handleError(error, '导出结果到 Excel 出错，请检查控制台信息');
     }
 }
 
@@ -312,7 +276,119 @@ window.addEventListener('load', () => {
         initEventListeners();
         console.log('事件监听器初始化完成');
     } catch (error) {
-        console.error('页面加载初始化出错:', error);
-        alert('页面加载初始化出错，请检查控制台信息');
+        handleError(error, '页面加载初始化出错，请检查控制台信息');
     }
 });
+
+// 初始化 IndexedDB 数据库
+const dbName = 'DC';
+const storeName = 'ScoreV1';
+let db;
+
+// 打开数据库
+const request = indexedDB.open(dbName, 1);
+
+// 当数据库版本更新或首次创建时执行
+request.onupgradeneeded = function(event) {
+    db = event.target.result;
+    // 检查对象仓库是否存在，如果不存在则创建
+    if (!db.objectStoreNames.contains(storeName)) {
+        const objectStore = db.createObjectStore(storeName, {
+            keyPath: 'id', // 主键字段
+            autoIncrement: true // 自动递增主键
+        });
+
+        // 为常用查询字段创建索引
+        objectStore.createIndex('studentId', 'studentId', { unique: false });
+        objectStore.createIndex('examType', 'examType', { unique: false });
+        objectStore.createIndex('schoolYear', 'schoolYear', { unique: false });
+    }
+};
+
+// 数据库打开成功时执行
+request.onsuccess = function(event) {
+    db = event.target.result;
+    console.log('数据库 DC 已成功打开');
+};
+
+// 数据库打开失败时执行
+request.onerror = function(event) {
+    console.error('数据库 DC 打开失败:', event.target.error);
+};
+
+// 关闭数据库连接的函数
+function closeDB() {
+    if (db) {
+        db.close();
+        console.log('数据库 DC 已关闭');
+    }
+}
+
+// 示例：添加数据到数据库
+function addData(data) {
+    if (db) {
+        const transaction = db.transaction([storeName], 'readwrite');
+        const objectStore = transaction.objectStore(storeName);
+        const addRequest = objectStore.add(data);
+
+        addRequest.onsuccess = function(event) {
+            console.log('数据添加成功，ID:', event.target.result);
+        };
+
+        addRequest.onerror = function(event) {
+            console.error('数据添加失败:', event.target.error);
+        };
+    }
+}
+
+// 示例：从数据库获取数据
+function getData(id) {
+    if (db) {
+        const transaction = db.transaction([storeName], 'readonly');
+        const objectStore = transaction.objectStore(storeName);
+        const getRequest = objectStore.get(id);
+
+        getRequest.onsuccess = function(event) {
+            if (event.target.result) {
+                console.log('获取到的数据:', event.target.result);
+            } else {
+                console.log('未找到 ID 为 ' + id + ' 的数据');
+            }
+        };
+
+        getRequest.onerror = function(event) {
+            console.error('数据获取失败:', event.target.error);
+        };
+    }
+}
+
+// 处理文件上传
+function handleFileUpload(event) {
+    try {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+            const { validGrades, errorRecords } = validateData(jsonData);
+            if (errorRecords.length > 0) {
+                exportErrorReport(errorRecords);
+                alert('数据导入存在错误，请查看错误报告');
+                return;
+            }
+
+            allGrades = validGrades;
+            populateYearDropdowns();
+            alert('数据导入成功');
+        };
+        reader.readAsArrayBuffer(file);
+    } catch (error) {
+        handleError(error, '文件上传处理出错，请检查控制台信息');
+    }
+}
